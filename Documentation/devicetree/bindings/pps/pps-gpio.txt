@@ -10,11 +10,23 @@ Required properties:
 Optional properties:
 - assert-falling-edge: when present, assert is indicated by a falling edge
                        (instead of by a rising edge)
+- capture-clear:       when present, capture both assert (start of timepulse) and
+		       clear (end of timepulse) events. Usually desireable.
+- source-name:	       when present, allows user specification of device name.
+  		       This allows systems with multiple KPPS devices to construct
+		       a map between device tree entries and /dev/ppsN. If
+		       unspecified, defaults to the auto-generated name of prior code.
+- source-path:	       when present, allows user specification of the serial GPS
+  		       device (as a tty device) associated with this KPPS device.
+		       This allows systems with multiple KPPS and GPS serial
+		       devices to construct a map between devices.
 
 Example:
 	pps {
 		compatible = "pps-gpio";
 		gpios = <&gpio2 6 0>;
-
-		assert-falling-edge;
+		source-name = "ublox_max7";
+		source-path = "/dev/ttyO4";
+		capture-clear;
+		assert-falling-edge;  /* atypical */
 	};

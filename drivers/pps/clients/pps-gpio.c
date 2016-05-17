@@ -95,6 +95,8 @@ static int pps_gpio_probe(struct platform_device *pdev)
 	int pps_default_params;
 	const struct pps_gpio_platform_data *pdata = pdev->dev.platform_data;
 	struct device_node *np = pdev->dev.of_node;
+	const char *str;
+	int len;
 
 	/* allocate space for device info */
 	data = devm_kzalloc(&pdev->dev, sizeof(struct pps_gpio_device_data),
@@ -109,6 +111,7 @@ static int pps_gpio_probe(struct platform_device *pdev)
 		data->assert_falling_edge = pdata->assert_falling_edge;
 		data->capture_clear = pdata->capture_clear;
 	} else {
+		dev_info(&pdev->dev,"reading pps config from device tree.\n");
 		ret = of_get_gpio(np, 0);
 		if (ret < 0) {
 			dev_err(&pdev->dev, "failed to get GPIO from device tree\n");
@@ -119,7 +122,16 @@ static int pps_gpio_probe(struct platform_device *pdev)
 
 		if (of_get_property(np, "assert-falling-edge", NULL))
 			data->assert_falling_edge = true;
+		if (of_get_property(np, "capture-clear", NULL))
+			data->capture_clear = true;
 	}
+
+#ifdef CONFIG_NTP_PPS
+	/* this config option changes how KPPS works, so at least flag it in log*/
+        dev_info(&pdev->dev,"CONFIG_NTP_PPS is set\n");
+#else
+        dev_info(&pdev->dev,"CONFIG_NTP_PPS is not set\n");
+#endif
 
 	/* GPIO setup */
 	ret = devm_gpio_request(&pdev->dev, data->gpio_pin, gpio_label);
@@ -150,8 +162,22 @@ static int pps_gpio_probe(struct platform_device *pdev)
 		data->info.mode |= PPS_CAPTURECLEAR | PPS_OFFSETCLEAR |
 			PPS_ECHOCLEAR;
 	data->info.owner = THIS_MODULE;
-	snprintf(data->info.name, PPS_MAX_NAME_LEN - 1, "%s.%d",
-		 pdev->name, pdev->id);
+
+	/* read name and path (associated serial device) from DT */
+	str = of_get_property(np, "source-name", &len);
+	if (str) {
+		len = (len < PPS_MAX_NAME_LEN ? len : PPS_MAX_NAME_LEN);
+		snprintf(data->info.name, len, str);
+	} else {
+		snprintf(data->info.name, PPS_MAX_NAME_LEN, "%s.%d",
+			 pdev->name, pdev->id);
+	}
+
+        str = of_get_property(np, "source-path", &len);
+	if (str) {
+		len = (len < PPS_MAX_NAME_LEN ? len : PPS_MAX_NAME_LEN);
+		snprintf(data->info.path, len, str);
+        }
 
 	/* register PPS source */
 	pps_default_params = PPS_CAPTUREASSERT | PPS_OFFSETASSERT;
