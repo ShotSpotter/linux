@@ -62,6 +62,7 @@ static const struct reg_default wm8737_reg_defaults[] = {
 	{ 12, 0x007C },     /* R12 - ALC1 */
 	{ 13, 0x0000 },     /* R13 - ALC2 */
 	{ 14, 0x0032 },     /* R14 - ALC3 */
+        { 28, 0x0000 },     /* R28 - RESERVED SEE DATASHEET */
 };
 
 static bool wm8737_volatile(struct device *dev, unsigned int reg)
@@ -165,6 +166,9 @@ SOC_DOUBLE("INPUT1 DC Bias Switch", WM8737_MISC_BIAS_CONTROL, 0, 1, 1, 0),
 SOC_ENUM("Mic PGA Bias", micbias_enum),
 SOC_SINGLE("ADC Low Power Switch", WM8737_ADC_CONTROL, 2, 1, 0),
 SOC_SINGLE("High Pass Filter Switch", WM8737_ADC_CONTROL, 0, 1, 1),
+SOC_SINGLE("HPF Continuous Update", WM8737_ADC_CONTROL, 4, 1, 0),
+SOC_SINGLE("3D Bypass A", WM8737_ALC2, 5, 0x1E0, 0),
+SOC_SINGLE("3D Bypass B", WM8737_REG_1C, 0, 0x1FF, 0),
 SOC_DOUBLE("Polarity Invert Switch", WM8737_ADC_CONTROL, 5, 6, 1, 0),
 
 SOC_SINGLE("3D Switch", WM8737_3D_ENHANCE, 0, 1, 0),
@@ -359,13 +363,13 @@ static int wm8737_hw_params(struct snd_pcm_substream *substream,
 	case 16:
 		break;
 	case 20:
-		af |= 0x8;
+		af |= 0x4;
 		break;
 	case 24:
-		af |= 0x10;
+		af |= 0x8;
 		break;
 	case 32:
-		af |= 0x18;
+		af |= 0xC;
 		break;
 	default:
 		return -EINVAL;
@@ -459,6 +463,8 @@ static int wm8737_set_bias_level(struct snd_soc_codec *codec,
 
 	switch (level) {
 	case SND_SOC_BIAS_ON:
+	  /* turn micbias voltage to highest value 11*/
+	  snd_soc_update_bits(codec, WM8737_POWER_MANAGEMENT, WM8737_MICBIAS_MASK, WM8737_MICBIAS_MASK);
 		break;
 
 	case SND_SOC_BIAS_PREPARE:

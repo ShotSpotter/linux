@@ -32,9 +32,26 @@
 #define WM8737_ALC2                             0x0D
 #define WM8737_ALC3                             0x0E
 #define WM8737_RESET                            0x0F
+/*
+ * Registers 10-1C are undocumented except by Note 1,
+ * page 29, wm8737 datasheet Rev 4.4 regarding SR >= 88.2 kHz
+ */
+#define WM8737_REG_10                           0x10
+#define WM8737_REG_11                           0x11
+#define WM8737_REG_12                           0x12
+#define WM8737_REG_13                           0x13
+#define WM8737_REG_14                           0x14
+#define WM8737_REG_15                           0x15
+#define WM8737_REG_16                           0x16
+#define WM8737_REG_17                           0x17
+#define WM8737_REG_18                           0x18
+#define WM8737_REG_19                           0x19
+#define WM8737_REG_1A                           0x1A
+#define WM8737_REG_1B                           0x1B
+#define WM8737_REG_1C                           0x1C
 
-#define WM8737_REGISTER_COUNT                   16
-#define WM8737_MAX_REGISTER                     0x0F
+#define WM8737_REGISTER_COUNT                   29
+#define WM8737_MAX_REGISTER                     0x1C
 
 /*
  * Field Definitions.
