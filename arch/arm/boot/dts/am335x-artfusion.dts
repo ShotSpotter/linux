@@ -1,0 +1,279 @@
+/*
+ * Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+/dts-v1/;
+
+#include "am33xx.dtsi"
+#include "am335x-bone-common.dtsi"
+#include "dt-bindings/mfd/arizona.h"
+
+/ {
+	model = "TI AM335x BeagleBone Black";
+	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+
+
+leds {
+     pinctrl-names = "default";
+     pinctrl-0 = <&led_pins_default>;
+     compatible = "gpio-leds";
+
+     led@1 {
+     	   label= "led_ir";
+	   gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+	   default-state = "off";
+	   };
+
+     led@2 {
+     	   label= "led_red";
+	   gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+	   default-state = "off";
+	   };
+};
+
+
+
+ldo18: ldo18 {
+      compatible = "regulator-fixed";
+      regulator-name = "DC_1V8";
+      regulator-min-microvolt = <1800000>;
+      regulator-max-microvolt = <1800000>;
+      enable-active-high;
+      regulator-always-on;
+        };
+
+ldo50: ldo50 { /* BBB VCC_5V */
+      compatible = "regulator-fixed";
+      regulator-name = "DC_5V0";
+      regulator-min-microvolt = <5000000>;
+      regulator-max-microvolt = <5000000>;
+      enable-active-high;
+      regulator-always-on;
+        };
+
+clk_audio_fixed: clk_audio_fixed {
+      #clock-cells = <0>;
+      compatible = "fixed-clock";
+      clock-frequency = <24576000>;
+};
+
+
+clk_audio: clk_audio {
+      #clock-cells = <0>;
+      compatible = "gpio-gate-clock";
+      clocks = <&clk_audio_fixed>;
+      enable-gpios = <&gpio1 27 GPIO_ACTIVE_HIGH>; /* BeagleBone Black Clk enable on GPIO1_27 */
+};
+
+
+sound {
+    status = "okay";
+    compatible = "simple-audio-card";
+    simple-audio-card,name = "WM5102";
+    simple-audio-card,widgets =
+        "Line", "Line In";
+    simple-audio-card,routing =
+				 "IN1L", "Line In",
+				 "IN1R", "Line In",
+				 "IN2L", "Line In",
+				 "IN2R", "Line In",
+				 "IN3L", "Line In",
+				 "IN3R", "Line In";
+	simple-audio-card,hp-det-gpio = <&gpio0 12 GPIO_ACTIVE_HIGH>; /*TP38*/
+    simple-audio-card,dai-link {
+	format = "dsp_b";
+	bitclock-master = <&sound_master>;
+	frame-master = <&sound_master>;
+	cpu {
+		sound-dai = <&mcasp0>;
+		/*
+		dai-tdm-slot-num = <6>;
+		dai-tdm-slot-width = <32>;
+		*/
+	};
+	sound_master: codec {
+		sound-dai = <&wm5102>;
+		clocks = <&clk_audio>;
+		/*
+		dai-tdm-slot-num = <6>;
+		dai-tdm-slot-width = <32>;
+		*/
+	};
+    };
+
+};
+
+};
+
+&ldo3_reg {
+	regulator-min-microvolt = <1800000>;
+	regulator-max-microvolt = <1800000>;
+	regulator-always-on;
+};
+
+&mmc1 {
+	vmmc-supply = <&vmmcsd_fixed>;
+};
+
+&mmc2 {
+	vmmc-supply = <&vmmcsd_fixed>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&emmc_pins>;
+	bus-width = <8>;
+	status = "okay";
+};
+
+&am33xx_pinmux {
+
+	nxp_hdmi_bonelt_pins: nxp_hdmi_bonelt_pins {
+		pinctrl-single,pins = <
+		0x1b0 0x03      /* xdma_event_intr0, OMAP_MUX_MODE3 | AM33XX_PIN_OUTPUT */
+		0x18c ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (C16) I2C0_SCL.I2C0_SCL */
+		0x188 ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (C17) I2C0_SDA.I2C0_SDA */
+		>;
+	};
+	
+	nxp_hdmi_bonelt_off_pins: nxp_hdmi_bonelt_off_pins {
+		pinctrl-single,pins = <
+			0x1b0 0x03      /* xdma_event_intr0, OMAP_MUX_MODE3 | AM33XX_PIN_OUTPUT */
+			0x18c ( PIN_INPUT | MUX_MODE0 ) /* (C16) I2C0_SCL.I2C0_SCL */
+			0x188 ( PIN_INPUT | MUX_MODE0 ) /* (C17) I2C0_SDA.I2C0_SDA */
+		>;
+	};
+
+	led_pins_default: led_pins_default {
+		pinctrl-single,pins = <
+			0x178 ( PIN_OUTPUT | MUX_MODE7 ) /* (D18) uart1_ctsn.gpio0[12] TP38 */
+			0x17c ( PIN_OUTPUT | MUX_MODE7 ) /* (D17) uart1_rtsn.gpio0[13] TP39 */
+			0x28 ( PIN_OUTPUT_PULLDOWN | MUX_MODE7 ) /* (T11) gpmc_ad10.gpio0[26] IR LED */
+			0x38 ( PIN_OUTPUT_PULLDOWN | MUX_MODE7 ) /* (V13) gpmc_ad14.gpio1[14] RED LED */
+		>;
+	};
+
+	accel_pins_default: accel_pins_default {
+		pinctrl-single,pins = <
+			0xe8 ( PIN_INPUT_PULLDOWN | MUX_MODE7 ) /* (V5) lcd_pclk.gpio2[24] ACCEL_ST */
+			0xec ( PIN_INPUT_PULLUP | MUX_MODE7 ) /* (R6) lcd_ac_bias_en.gpio2[25] ACCEL_FS */
+		>;
+	};
+
+	mcasp0_slave_pins_default: mcasp0_slave_pins_default {
+		pinctrl-single,pins = <
+			0x1a0 ( PIN_INPUT | MUX_MODE0 ) /* (B12) mcasp0_aclkr.mcasp0_aclkr */
+			0x1a4 ( PIN_INPUT | MUX_MODE0 ) /* (C13) mcasp0_fsr.mcasp0_fsr */
+			0x198 ( PIN_INPUT | MUX_MODE0 ) /* (D12) mcasp0_axr0.mcasp0_axr0 */
+			0x19c ( PIN_OUTPUT | MUX_MODE2 ) /* (C12) mcasp0_ahclkr.mcasp0_axr2 */
+		>;
+	};
+
+	wm5102_pins_default: wm5102_pins_default {
+		pinctrl-single,pins = <
+			0x6c ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (V17) gpmc_a11.gpio1[27] 24.576 MHZ CE */
+			0x78 ( PIN_OUTPUT_PULLDOWN | MUX_MODE7 ) /* (U18) gpmc_be1n.gpio1[28] /RESET */
+			0x7c ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (V6) gpmc_csn0.gpio1[29] LDOENA */
+			0xe4 ( PIN_INPUT_PULLUP | MUX_MODE7 ) /* (R5) lcd_hsync.gpio2[23] /IRQ */
+			0x1ac ( PIN_INPUT | MUX_MODE7 ) /* (A14) mcasp0_ahclkx.gpio3[21] AUDIO_MCLK */
+			0x15c ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (A16) spi0_cs0.I2C1_SCL */
+			0x158 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (B16) spi0_d1.I2C1_SDA */
+			0x164 ( PIN_INPUT | MUX_MODE7 ) /* (C18) eCAP0_in_PWM0_out.gpio0[7] (AUDIO BCLK) HIGHZ*/
+		>;
+	};
+
+
+};
+
+&lcdc {
+	status = "disabled";
+	port {
+		lcdc_0: endpoint@0 {
+			remote-endpoint = <&hdmi_0>;
+		};
+	};
+};
+
+&i2c0 {
+	tda19988 {
+		compatible = "nxp,tda998x";
+		reg = <0x70>;
+		pinctrl-names = "default", "off";
+		pinctrl-0 = <&nxp_hdmi_bonelt_pins>;
+		pinctrl-1 = <&nxp_hdmi_bonelt_off_pins>;
+
+		port {
+			hdmi_0: endpoint@0 {
+				remote-endpoint = <&lcdc_0>;
+			};
+		};
+	};
+};
+
+
+&i2c1 {
+      pinctrl-names = "default";
+      pintctrl-0 = <&wm5102_pins_default>;
+      status = "okay";
+      clock-frequency = <400000>;
+
+
+      wm5102: wm5102@1a {
+		compatible = "wlf,wm5102";
+	      reg = <0x1a>;
+	      status = "okay";
+	      /* /IRQ is connected to GPIO2_23. Mask from HiassofT DT for cirrus audio board was 8 */
+	      interrupts = <23 0>;
+	      interrupt-controller;
+	      #interrupt-cells = <2>;
+	      interrupt-parent = <&gpio2>;
+	      gpio-controller;
+	      #gpio-cells = <2>;
+	      wlf,gpio-defaults = <
+			ARIZONA_GP_FN_TXLRCLK
+			ARIZONA_GP_DEFAULT
+			ARIZONA_GP_DEFAULT
+			ARIZONA_GP_DEFAULT
+			ARIZONA_GP_DEFAULT
+			>;
+	      wlf,reset = <&gpio1 28 GPIO_ACTIVE_HIGH>; /* allow /RESET wm5102 by driver (via inverter)*/
+	      LDOVDD-supply  = <&ldo18>; /* fixed 1V8 regulator */
+	      AVDD-supply    = <&ldo18>;
+	      DBVDD1-supply  = <&ldo18>;
+	      DBVDD2-supply  = <&ldo18>;
+	      DBVDD3-supply  = <&ldo18>;
+	      CPVDD-supply   = <&ldo18>;
+	      SPKVDDL-supply = <&ldo50>; /* fixed VDD_5V from BBB */
+	      SPKVDDR-supply = <&ldo50>;
+              #sound-dai-cells = <0>;
+/* we haven't figured out how reference the internal LDO */
+#if 0
+	ldo1: ldo1 {
+		wlf,ldoena = <&gpio1 29 GPIO_ACTIVE_HIGH>; /* allow LDOENA wm5102 by driver */
+	};
+#endif
+      };
+
+};
+
+
+&mcasp0 {
+        pinctrl-names = "default";
+        pinctrl-0 = <&mcasp0_slave_pins_default>;
+
+        status = "okay";
+        op-mode = <0>;        /* MCASP_IIS_MODE */
+	tdm-slots = <6>;
+        /* 4 serializers */
+        serial-dir = <  /* 0: INACTIVE, 1: TX, 2: RX - 0 2 0 0 */
+                2 0 0 0
+        >;
+        tx-num-evt = <32>;
+        rx-num-evt = <32>;
+        #sound-dai-cells = <0>;
+};
+
+
+&rtc {
+	system-power-controller;
+};
