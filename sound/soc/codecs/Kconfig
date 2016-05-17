@@ -813,7 +813,7 @@ config SND_SOC_WM5100
 	tristate
 
 config SND_SOC_WM5102
-	tristate
+	tristate "Wolfson Microelectronics WM5102 CODEC"
 
 config SND_SOC_WM5110
 	tristate
